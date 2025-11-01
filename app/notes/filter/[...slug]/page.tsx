@@ -10,6 +10,32 @@ import {
   HydrationBoundary,
   QueryClient,
 } from '@tanstack/react-query';
+import { Metadata } from 'next';
+
+export async function generateMetadata({
+  params,
+}: FilteredNotesProps): Promise<Metadata> {
+  const { slug: [filter] = [] } = (await params) || {};
+
+  return {
+    title: `${filter} Notes - NoteHub`,
+    description: `Notes filtered by ${filter}`,
+    openGraph: {
+      title: `${filter} Notes - NoteHub`,
+      description: `Notes filtered by ${filter}`,
+      url: `${process.env.NEXT_BASE_URL}/notes/filter/${filter}`,
+      images: [
+        {
+          url: 'https://ac.goit.global/fullstack/react/notehub-og-meta.jpg',
+          width: 1530,
+          height: 1024,
+          alt: 'NoteHub Image',
+        },
+      ],
+      type: 'website',
+    },
+  };
+}
 
 async function FilteredNotes({ params }: FilteredNotesProps) {
   const { slug: [initialFilter] = [] } = (await params) || {};
