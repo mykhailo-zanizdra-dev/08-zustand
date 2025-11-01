@@ -18,11 +18,11 @@ export async function generateMetadata({
   const { slug: [filter] = [] } = (await params) || {};
 
   return {
-    title: `${filter} Notes - NoteHub`,
+    title: `${filter === 'all' ? 'All' : filter} Notes - NoteHub`,
     description: `Notes filtered by ${filter}`,
     openGraph: {
-      title: `${filter} Notes - NoteHub`,
-      description: `Notes filtered by ${filter}`,
+      title: `${filter === 'all' ? 'All' : filter} Notes - NoteHub`,
+      description: `In this page you can see ${filter === 'all' ? 'all notes' : `notes filtered by ${filter}`}.`,
       url: `${process.env.NEXT_BASE_URL}/notes/filter/${filter}`,
       images: [
         {
