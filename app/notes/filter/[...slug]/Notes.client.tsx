@@ -1,10 +1,7 @@
 'use client';
-
 import EmptyMessage from '@/components/EmptyMessage/EmptyMessage';
 import ErrorMessage from '@/components/ErrorMessage/ErrorMessage';
 import Loader from '@/components/Loader/Loader';
-import Modal from '@/components/Modal/Modal';
-import NoteForm from '@/components/NoteForm/NoteForm';
 import NoteList from '@/components/NoteList/NoteList';
 import Pagination from '@/components/Pagination/Pagination';
 import SearchBox from '@/components/SearchBox/SearchBox';
@@ -16,6 +13,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import { useDebouncedCallback } from 'use-debounce';
 import { useQuery } from '@tanstack/react-query';
 import css from './Notes.module.css';
+import Link from 'next/link';
 
 interface NotesClientProps {
   filter?: string;
@@ -24,7 +22,6 @@ interface NotesClientProps {
 const NotesClient = ({ filter }: NotesClientProps) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isOpenModal, setIsOpenModal] = useState(false);
 
   const handleChange = useDebouncedCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -76,19 +73,14 @@ const NotesClient = ({ filter }: NotesClientProps) => {
             setPage={setCurrentPage}
           />
         )}
-        <button className={css.button} onClick={() => setIsOpenModal(true)}>
+        <Link href="/notes/action/create" className={css.button}>
           Create note +
-        </button>
+        </Link>
       </header>
       {!!notes?.length && <NoteList notes={notes} />}
       {isFetching && <Loader />}
       {isError && <ErrorMessage message={error.message} />}
       {isSuccess && !notes?.length && <EmptyMessage />}
-      {isOpenModal && (
-        <Modal handleClose={() => setIsOpenModal(false)}>
-          <NoteForm handleClose={() => setIsOpenModal(false)} />
-        </Modal>
-      )}
     </div>
   );
 };

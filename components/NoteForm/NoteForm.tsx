@@ -1,16 +1,15 @@
+'use client';
 import { useId } from 'react';
 import { ErrorMessage, Field, Form, Formik, type FormikHelpers } from 'formik';
 import * as Yup from 'yup';
 import toast from 'react-hot-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import css from './NoteForm.module.css';
-import type { NoteTag } from '../../types/note';
+import { noteTags, type NoteTag } from '../../types/note';
 import { createNote } from '@/lib/api';
 import QUERY_KEYS from '../../const/queryKeys';
-
-interface NoteFormProps {
-  handleClose: () => void;
-}
+import { useNoteDraftStore } from '@/lib/store/noteStore';
+import { useRouter } from 'next/navigation';
 
 interface NoteFormValues {
   title: string;
@@ -25,10 +24,7 @@ const NoteFormSchema = Yup.object().shape({
     .required('Name is required'),
   content: Yup.string().max(500, 'Content is too long'),
   tag: Yup.string()
-    .oneOf<NoteTag>(
-      ['Todo', 'Work', 'Personal', 'Meeting', 'Shopping'],
-      'Tag is invalid'
-    )
+    .oneOf<NoteTag>(noteTags, 'Tag is invalid')
     .required('Tag is required'),
 });
 
@@ -38,16 +34,23 @@ const initialValues: NoteFormValues = {
   tag: 'Todo',
 };
 
-function NoteForm({ handleClose }: NoteFormProps) {
+function NoteForm() {
   const fieldId = useId();
   const queryClient = useQueryClient();
+  const router = useRouter();
+
+  const { draftNote, setDraftNote, clearDraftNote } = useNoteDraftStore();
+
+  const hasDraft =
+    !!draftNote.title || !!draftNote.content || draftNote.tag !== 'Todo';
 
   const { mutate: createNoteRequest, isPending: isCreatingNote } = useMutation({
     mutationFn: createNote,
     onSuccess: () => {
       toast.success('Note created successfully');
-      handleClose();
+      clearDraftNote();
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.NOTES] });
+      router.push('/notes/filter/all');
     },
     onError: () => {
       toast.error('There was an error creating the note');
@@ -60,72 +63,107 @@ function NoteForm({ handleClose }: NoteFormProps) {
   ) => {
     createNoteRequest(values);
     actions.resetForm();
+    clearDraftNote();
   };
 
   return (
     <Formik
-      initialValues={initialValues}
+      initialValues={hasDraft ? draftNote : initialValues}
       validationSchema={NoteFormSchema}
       onSubmit={handleSubmit}
     >
-      <Form className={css.form}>
-        <div className={css.formGroup}>
-          <label htmlFor={`${fieldId}-title`}>Title</label>
-          <Field
-            type="text"
-            id={`${fieldId}-title`}
-            name="title"
-            className={css.input}
-          />
-          <ErrorMessage name="title" component="span" className={css.error} />
-        </div>
+      {({ values, setFieldValue }) => (
+        <Form className={css.form}>
+          <div className={css.formGroup}>
+            <label htmlFor={`${fieldId}-title`}>Title</label>
+            <Field
+              type="text"
+              id={`${fieldId}-title`}
+              name="title"
+              className={css.input}
+              onBlur={(e: React.FocusEvent<HTMLInputElement>) => {
+                const { value } = e.target;
+                if (value && value !== draftNote.title) {
+                  setDraftNote({
+                    ...values,
+                    title: value,
+                  });
+                }
+              }}
+            />
+            <ErrorMessage name="title" component="span" className={css.error} />
+          </div>
 
-        <div className={css.formGroup}>
-          <label htmlFor={`${fieldId}-content`}>Content</label>
-          <Field
-            as="textarea"
-            id={`${fieldId}-content`}
-            name="content"
-            rows={8}
-            className={css.textarea}
-          />
-          <ErrorMessage name="content" component="span" className={css.error} />
-        </div>
+          <div className={css.formGroup}>
+            <label htmlFor={`${fieldId}-content`}>Content</label>
+            <Field
+              as="textarea"
+              id={`${fieldId}-content`}
+              name="content"
+              rows={8}
+              className={css.textarea}
+              onBlur={(e: React.FocusEvent<HTMLTextAreaElement>) => {
+                const { value } = e.target;
+                if (value && value !== draftNote.content) {
+                  setDraftNote({
+                    ...values,
+                    content: value,
+                  });
+                }
+              }}
+            />
+            <ErrorMessage
+              name="content"
+              component="span"
+              className={css.error}
+            />
+          </div>
 
-        <div className={css.formGroup}>
-          <label htmlFor={`${fieldId}-tag`}>Tag</label>
-          <Field
-            as="select"
-            id={`${fieldId}-tag`}
-            name="tag"
-            className={css.select}
-          >
-            <option value="Todo">Todo</option>
-            <option value="Work">Work</option>
-            <option value="Personal">Personal</option>
-            <option value="Meeting">Meeting</option>
-            <option value="Shopping">Shopping</option>
-          </Field>
-          <ErrorMessage name="tag" component="span" className={css.error} />
-        </div>
+          <div className={css.formGroup}>
+            <label htmlFor={`${fieldId}-tag`}>Tag</label>
+            <Field
+              as="select"
+              id={`${fieldId}-tag`}
+              name="tag"
+              className={css.select}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                const { value } = e.target;
+                if (value !== values.tag) {
+                  setFieldValue('tag', value);
+                  setDraftNote({
+                    ...values,
+                    tag: value as NoteTag,
+                  });
+                }
+              }}
+            >
+              <option value="Todo">Todo</option>
+              <option value="Work">Work</option>
+              <option value="Personal">Personal</option>
+              <option value="Meeting">Meeting</option>
+              <option value="Shopping">Shopping</option>
+            </Field>
+            <ErrorMessage name="tag" component="span" className={css.error} />
+          </div>
 
-        <div className={css.actions}>
-          <button
-            onClick={handleClose}
-            type="button"
-            className={css.cancelButton}
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className={css.submitButton}
-            disabled={isCreatingNote}
-          >
-            Create note
-          </button>
-        </div>
-      </Form>
+          <div className={css.actions}>
+            <button
+              onClick={router.back}
+              type="button"
+              className={css.cancelButton}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className={css.submitButton}
+              disabled={isCreatingNote}
+            >
+              Create note
+            </button>
+          </div>
+        </Form>
+      )}
     </Formik>
   );
 }
