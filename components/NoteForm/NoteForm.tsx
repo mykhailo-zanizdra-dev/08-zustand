@@ -39,10 +39,9 @@ function NoteForm() {
   const queryClient = useQueryClient();
   const router = useRouter();
 
-  const { draftNote, setDraftNote, clearDraftNote } = useNoteDraftStore();
+  const { draft, setDraft, clearDraft } = useNoteDraftStore();
 
-  const hasDraftNote =
-    !!draftNote.title || !!draftNote.content || draftNote.tag !== 'Todo';
+  const hasDraft = !!draft.title || !!draft.content || draft.tag !== 'Todo';
 
   const { mutate: createNoteRequest, isPending: isCreatingNote } = useMutation({
     mutationFn: createNote,
@@ -52,7 +51,7 @@ function NoteForm() {
         queryKey: [QUERY_KEYS.NOTES],
         exact: false,
       });
-      clearDraftNote();
+      clearDraft();
       router.back();
     },
     onError: () => {
@@ -70,7 +69,7 @@ function NoteForm() {
 
   return (
     <Formik
-      initialValues={hasDraftNote ? draftNote : initialValues}
+      initialValues={hasDraft ? draft : initialValues}
       validationSchema={NoteFormSchema}
       onSubmit={handleSubmit}
     >
@@ -85,8 +84,8 @@ function NoteForm() {
               className={css.input}
               onBlur={(e: React.FocusEvent<HTMLInputElement>) => {
                 const { value } = e.target;
-                if (value && value !== draftNote.title) {
-                  setDraftNote({
+                if (value && value !== draft.title) {
+                  setDraft({
                     ...values,
                     title: value,
                   });
@@ -106,8 +105,8 @@ function NoteForm() {
               className={css.textarea}
               onBlur={(e: React.FocusEvent<HTMLTextAreaElement>) => {
                 const { value } = e.target;
-                if (value && value !== draftNote.content) {
-                  setDraftNote({
+                if (value && value !== draft.content) {
+                  setDraft({
                     ...values,
                     content: value,
                   });
@@ -130,9 +129,9 @@ function NoteForm() {
               className={css.select}
               onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                 const { value } = e.target;
-                if (value !== values.tag) {
+                if (value !== draft.tag) {
                   setFieldValue('tag', value);
-                  setDraftNote({
+                  setDraft({
                     ...values,
                     tag: value as NoteTag,
                   });
