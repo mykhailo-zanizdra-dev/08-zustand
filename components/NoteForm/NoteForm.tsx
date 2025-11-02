@@ -1,15 +1,15 @@
 'use client';
 import { useId } from 'react';
+import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 import { ErrorMessage, Field, Form, Formik, type FormikHelpers } from 'formik';
 import * as Yup from 'yup';
-import toast from 'react-hot-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import css from './NoteForm.module.css';
-import { noteTags, type NoteTag } from '../../types/note';
 import { createNote } from '@/lib/api';
-import QUERY_KEYS from '../../const/queryKeys';
 import { useNoteDraftStore } from '@/lib/store/noteStore';
-import { useRouter } from 'next/navigation';
+import QUERY_KEYS from '../../const/queryKeys';
+import { noteTags, type NoteTag } from '../../types/note';
+import css from './NoteForm.module.css';
 
 interface NoteFormValues {
   title: string;
@@ -48,8 +48,10 @@ function NoteForm() {
     mutationFn: createNote,
     onSuccess: () => {
       toast.success('Note created successfully');
-      clearDraftNote();
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.NOTES] });
+      queryClient.removeQueries({
+        queryKey: [QUERY_KEYS.NOTES],
+        exact: false,
+      });
       router.push('/notes/filter/all');
     },
     onError: () => {
