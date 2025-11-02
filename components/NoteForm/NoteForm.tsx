@@ -41,7 +41,7 @@ function NoteForm() {
 
   const { draftNote, setDraftNote, clearDraftNote } = useNoteDraftStore();
 
-  const hasDraft =
+  const hasDraftNote =
     !!draftNote.title || !!draftNote.content || draftNote.tag !== 'Todo';
 
   const { mutate: createNoteRequest, isPending: isCreatingNote } = useMutation({
@@ -52,7 +52,8 @@ function NoteForm() {
         queryKey: [QUERY_KEYS.NOTES],
         exact: false,
       });
-      router.push('/notes/filter/all');
+      clearDraftNote();
+      router.back();
     },
     onError: () => {
       toast.error('There was an error creating the note');
@@ -65,12 +66,11 @@ function NoteForm() {
   ) => {
     createNoteRequest(values);
     actions.resetForm();
-    clearDraftNote();
   };
 
   return (
     <Formik
-      initialValues={hasDraft ? draftNote : initialValues}
+      initialValues={hasDraftNote ? draftNote : initialValues}
       validationSchema={NoteFormSchema}
       onSubmit={handleSubmit}
     >
