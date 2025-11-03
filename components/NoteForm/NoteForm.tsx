@@ -72,6 +72,7 @@ function NoteForm() {
       initialValues={hasDraft ? draft : initialValues}
       validationSchema={NoteFormSchema}
       onSubmit={handleSubmit}
+      enableReinitialize
     >
       {({ values, setFieldValue }) => (
         <Form className={css.form}>
